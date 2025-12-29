@@ -1,0 +1,48 @@
+name: Build and publish latest.zip
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Download Dalamud dependencies
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Invoke-WebRequest -Uri 'https://goatcorp.github.io/dalamud-distrib/latest.zip' -OutFile 'dalamud.zip'
+          Expand-Archive -Path 'dalamud.zip' -DestinationPath 'dalamud' -Force
+          "DALAMUD_HOME=$env:GITHUB_WORKSPACE/dalamud" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Build (Release) and package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          dotnet build 'Saucy/Saucy.csproj' -c Release -p:Platform=x64 -p:MakeZip=true
+          if (!(Test-Path 'Saucy/bin/x64/Release/Saucy/latest.zip')) { throw 'latest.zip not found at expected path' }
+
+      - name: Upload latest.zip to GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: latest
+          name: latest
+          allowUpdates: true
+          replacesArtifacts: true
+          artifactErrorsFailBuild: true
+          artifacts: Saucy/bin/x64/Release/Saucy/latest.zip
