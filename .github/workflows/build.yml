@@ -5,7 +5,12 @@ on:
     branches:
       - master
       - main
+    tags:
+      - "v*"
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -51,3 +56,12 @@ jobs:
         with:
           name: SaucyCN
           path: ${{ runner.temp }}/artifacts/SaucyCN.zip
+
+      - name: Create GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          artifacts: ${{ runner.temp }}/artifacts/SaucyCN.zip
+          allowUpdates: true
