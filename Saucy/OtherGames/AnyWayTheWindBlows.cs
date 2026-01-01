@@ -5,12 +5,13 @@ using ECommons.ImGuiMethods;
 using Saucy.Framework;
 using System.Linq;
 using System.Numerics;
+using static Saucy.UiText;
 
 namespace Saucy.OtherGames;
 public class AnyWayTheWindBlows : Module
 {
     // from https://github.com/img02/Fungah-Totally-Safe-Spot/
-    public override string Name => "Any Way the Wind Blows";
+    public override string Name => GameWind;
 
     public override void Enable() => Svc.PluginInterface.UiBuilder.Draw += Draw;
     public override void Disable() => Svc.PluginInterface.UiBuilder.Draw -= Draw;
@@ -53,10 +54,10 @@ public class AnyWayTheWindBlows : Module
                     using var _ = ImRaii.PushColor(ImGuiCol.ChildBg, new Vector4(0, 0, 0, 0.8f));
                     ImGui.SetCursorPosX(4f * ImGuiHelpers.GlobalScale);
 
-                    if (Player.Position.X - Stage.SafeSpot.Position.X > 0.015) ImGui.Text("move left");
-                    else if (Stage.SafeSpot.Position.X - Player.Position.X > 0.015) ImGui.Text("move right");
-                    else if (Player.Position.Z < Stage.SafeSpot.Position.Z) ImGui.Text("move down");
-                    else if (Player.Position.Z > Stage.SafeSpot.Position.Z) ImGui.Text("move up");
+                    if (Player.Position.X - Stage.SafeSpot.Position.X > 0.015) ImGui.Text(T("move left", "向左移动"));
+                    else if (Stage.SafeSpot.Position.X - Player.Position.X > 0.015) ImGui.Text(T("move right", "向右移动"));
+                    else if (Player.Position.Z < Stage.SafeSpot.Position.Z) ImGui.Text(T("move down", "向下移动"));
+                    else if (Player.Position.Z > Stage.SafeSpot.Position.Z) ImGui.Text(T("move up", "向上移动"));
                 }
 
                 ImGui.End();

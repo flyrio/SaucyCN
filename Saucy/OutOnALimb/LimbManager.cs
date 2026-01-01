@@ -23,6 +23,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text.RegularExpressions;
 using static ECommons.GenericHelpers;
+using static Saucy.UiText;
 
 namespace Saucy.OutOnALimb;
 public unsafe class LimbManager : IDisposable
@@ -450,37 +451,42 @@ public unsafe class LimbManager : IDisposable
     public void DrawSettings()
     {
         var save = false;
-        ImGuiEx.TextWrapped($"How to use: enable module, walk up to the Out on a Limb machine in Gold Saucer, input number of games you want to play to play automatically or access the machine manually to play one game.");
+        ImGuiEx.TextWrapped(T(
+            "How to use: enable module, walk up to the Out on a Limb machine in Gold Saucer, input number of games you want to play to play automatically or access the machine manually to play one game.",
+            $"使用方法：启用模块后，走到金碟游乐场的{GameLimb}机器前，输入想要自动游玩的次数；也可以手动进入机器只玩一局。"));
         if (TidyChat)
-            ImGuiEx.TextWrapped(ImGuiColors.DalamudRed, $@"Tidychat Warning: Please ensure you do not have ""You sense something..."" messages (Advanced -> System messages) hidden or this will not work");
+            ImGuiEx.TextWrapped(ImGuiColors.DalamudRed, T(
+                @"Tidychat Warning: Please ensure you do not have ""You sense something..."" messages (Advanced -> System messages) hidden or this will not work",
+                "TidyChat 警告：请确保未隐藏“你感到有什么……”消息（高级 -> 系统消息），否则将无法工作。"));
         ImGui.Separator();
-        save |= ImGui.Checkbox($"Enable", ref Cfg.EnableLimb);
+        save |= ImGui.Checkbox(T("Enable", "启用"), ref Cfg.EnableLimb);
         ImGui.SetNextItemWidth(100f);
-        ImGui.InputInt("Games to play", ref GamesToPlay.ValidateRange(0, 9999));
+        ImGui.InputInt(T("Games to play", "游玩次数"), ref GamesToPlay.ValidateRange(0, 9999));
         ImGui.SameLine();
-        if (ImGui.Button("Max")) GamesToPlay = 9999;
-        ImGui.Checkbox($"Stop at next double down", ref Exit);
+        if (ImGui.Button(T("Max", "最大"))) GamesToPlay = 9999;
+        ImGui.Checkbox(T("Stop at next double down", "在下一次加倍时停止"), ref Exit);
 
         ImGui.Separator();
         ImGui.SetNextItemWidth(100f);
-        save |= ImGuiEx.EnumCombo("Difficulty", ref Cfg.LimbDifficulty);
+        save |= ImGuiEx.EnumCombo(T("Difficulty", "难度"), ref Cfg.LimbDifficulty);
         ImGui.SetNextItemWidth(100f);
-        save |= ImGuiEx.SliderInt($"Tolerance", ref Cfg.Tolerance.ValidateRange(1, 4), 1, 4);
+        save |= ImGuiEx.SliderInt(T("Tolerance", "容差"), ref Cfg.Tolerance.ValidateRange(1, 4), 1, 4);
         ImGui.SameLine();
-        if (ImGui.Button("Default##1")) Cfg.Tolerance = new LimbConfig().Tolerance;
+        if (ImGui.Button(T("Default##1", "默认##1"))) Cfg.Tolerance = new LimbConfig().Tolerance;
         var req = CalcRequiredFPS();
         var current = ImGui.GetIO().Framerate;
         var delta = current - req;
-        ImGuiEx.TextWrapped(delta > -1 ? ImGuiColors.ParsedGreen : (delta > -(req * 0.15f) ? ImGuiColors.DalamudYellow : ImGuiColors.DalamudRed), $"Required framerate: {req}\nYour framerate: {(int)current}");
-        ImGuiEx.TextWrapped($"Reducing tolerance or difficulty will reduce required framerate.");
+        ImGuiEx.TextWrapped(delta > -1 ? ImGuiColors.ParsedGreen : (delta > -(req * 0.15f) ? ImGuiColors.DalamudYellow : ImGuiColors.DalamudRed),
+            F("Required framerate: {0}\nYour framerate: {1}", "所需帧率：{0}\n当前帧率：{1}", req, (int)current));
+        ImGuiEx.TextWrapped(T("Reducing tolerance or difficulty will reduce required framerate.", "降低容差或难度会降低所需帧率。"));
         ImGui.SetNextItemWidth(100f);
-        save |= ImGui.DragInt($"Step", ref Cfg.Step, 0.05f);
+        save |= ImGui.DragInt(T("Step", "步长"), ref Cfg.Step, 0.05f);
         ImGui.SameLine();
-        if (ImGui.Button("Default##2")) Cfg.Step = new LimbConfig().Step;
+        if (ImGui.Button(T("Default##2", "默认##2"))) Cfg.Step = new LimbConfig().Step;
         ImGui.SetNextItemWidth(100f);
-        save |= ImGui.DragInt($"Stop at remaining time with big win", ref Cfg.StopAt, 0.5f);
+        save |= ImGui.DragInt(T("Stop at remaining time with big win", "大赢时停止的剩余时间"), ref Cfg.StopAt, 0.5f);
         ImGui.SetNextItemWidth(100f);
-        save |= ImGui.DragInt($"Stop at remaining time with little win", ref Cfg.HardStopAt, 0.5f);
+        save |= ImGui.DragInt(T("Stop at remaining time with little win", "小赢时停止的剩余时间"), ref Cfg.HardStopAt, 0.5f);
 
         if (save) C.Save();
     }
@@ -506,9 +512,9 @@ public unsafe class LimbManager : IDisposable
                 var reference = addon->GetNodeById(NodeIDs[Cfg.LimbDifficulty]);
                 var cursor = addon->GetNodeById(39);
                 var iCursor = 400 - cursor->Height;
-                if (iCursor > reference->Y && iCursor < reference->Y + Heights[Cfg.LimbDifficulty]) ImGuiEx.Text($"Yes");
-                ImGuiEx.Text($"Reference: {reference->Y}");
-                ImGuiEx.Text($"Cursor: {cursor->Height}");
+                if (iCursor > reference->Y && iCursor < reference->Y + Heights[Cfg.LimbDifficulty]) ImGuiEx.Text(T("Yes", "是"));
+                ImGuiEx.Text($"{T("Reference", "参考")}: {reference->Y}");
+                ImGuiEx.Text($"{T("Cursor", "光标")}: {cursor->Height}");
             }
         }
         {
@@ -517,26 +523,26 @@ public unsafe class LimbManager : IDisposable
                 var reader = new ReaderMiniGameBotanist(addon);
                 var button = addon->GetComponentButtonById(24);
                 var cursor = GetCursor();
-                ImGuiEx.Text($"Cursor: {cursor}");
-                ImGui.Checkbox("Only request", ref OnlyRequest);
+                ImGuiEx.Text($"{T("Cursor", "光标")}: {cursor}");
+                ImGui.Checkbox(T("Only request", "仅请求"), ref OnlyRequest);
                 ImGui.SetNextItemWidth(100f);
-                ImGui.InputInt("Request input", ref RequestInput);
+                ImGui.InputInt(T("Request input", "请求输入"), ref RequestInput);
                 ImGui.SameLine();
-                if (ImGui.Button("Request")) Request = RequestInput;
+                if (ImGui.Button(T("Request", "请求"))) Request = RequestInput;
                 ImGui.SameLine();
-                if (ImGui.Button("Reset")) Request = null;
-                ImGuiEx.Text($"Button enabled: {button->IsEnabled}");
-                ImGuiEx.Text($"Seconds remaining: {reader.SecondsRemaining}");
-                if (ImGui.Button("Click"))
+                if (ImGui.Button(T("Reset", "重置"))) Request = null;
+                ImGuiEx.Text($"{T("Button enabled", "按钮可用")}: {button->IsEnabled}");
+                ImGuiEx.Text($"{T("Seconds remaining", "剩余秒数")}: {reader.SecondsRemaining}");
+                if (ImGui.Button(T("Click", "点击")))
                 {
                     if (button->IsEnabled)
                     {
                         button->ClickAddonButton(addon);
                     }
                 }
-                ImGuiEx.Text($"Next: {Next}, MinIndex: {MinIndex}, rec={RecordMinIndex}");
-                ImGuiEx.Text($"Starting points:\n{StartingPoints.Print(", ")}");
-                ImGuiEx.Text($"Results:\n{Results.Select(x => $"{x.Position}={x.Power}").Print("\n")}");
+                ImGuiEx.Text($"{T("Next", "下一次")}: {Next}, {T("MinIndex", "最小索引")}: {MinIndex}, rec={RecordMinIndex}");
+                ImGuiEx.Text($"{T("Starting points", "起始点")}:\n{StartingPoints.Print(", ")}");
+                ImGuiEx.Text($"{T("Results", "结果")}:\n{Results.Select(x => $"{x.Position}={x.Power}").Print("\n")}");
             }
         }
     }

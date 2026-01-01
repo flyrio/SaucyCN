@@ -8,12 +8,13 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.InteropServices;
+using static Saucy.UiText;
 
 namespace Saucy.OtherGames;
 
 public class SliceIsRight : Module
 {
-    public override string Name => "Slice is Right";
+    public override string Name => GameSlice;
 
     public override void Enable() => Svc.PluginInterface.UiBuilder.Draw += Draw;
     public override void Disable() => Svc.PluginInterface.UiBuilder.Draw -= Draw;
