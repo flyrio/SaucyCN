@@ -33,7 +33,7 @@ jobs:
           $dalamudRoot = Join-Path $env:RUNNER_TEMP "dalamud"
           New-Item -ItemType Directory -Path $dalamudRoot | Out-Null
           $zipPath = Join-Path $dalamudRoot "dalamud.zip"
-          Invoke-WebRequest -UseBasicParsing "https://raw.githubusercontent.com/goatcorp/dalamud-distrib/main/api14/latest.zip" -OutFile $zipPath
+          Invoke-WebRequest -UseBasicParsing "https://raw.githubusercontent.com/goatcorp/dalamud-distrib/main/api15/latest.zip" -OutFile $zipPath
           Expand-Archive -Path $zipPath -DestinationPath $dalamudRoot
           $dll = Get-ChildItem -Path $dalamudRoot -Recurse -Filter Dalamud.dll | Select-Object -First 1
           if (-not $dll) { throw "Dalamud.dll not found in downloaded archive." }
