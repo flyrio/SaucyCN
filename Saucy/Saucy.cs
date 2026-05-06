@@ -23,7 +23,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using TriadBuddyPlugin;
 using static ECommons.GenericHelpers;
-using AtkValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
+using AtkValueType = FFXIVClientStructs.FFXIV.Component.GUI.AtkValueType;
 
 namespace Saucy;
 

@@ -4,7 +4,7 @@ using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Memory;
 using ECommons;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using AtkValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
+using AtkValueType = FFXIVClientStructs.FFXIV.Component.GUI.AtkValueType;
 
 namespace Saucy.OutOnALimb.ECEmbedded;
 
