@@ -3,6 +3,7 @@ using Dalamud.Game.Command;
 using Dalamud.Plugin;
 using ECommons;
 using ECommons.Configuration;
+using ECommons.GameHelpers;
 using ECommons.SimpleGui;
 using ECommons.UIHelpers.AddonMasterImplementations;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -237,7 +238,7 @@ public sealed class Saucy : IDalamudPlugin
     private int GetBonusMGP(int numMGP)
     {
         double multiplier = 1;
-        var localPlayer = Svc.ClientState.LocalPlayer;
+        var localPlayer = Player.Object;
         if (localPlayer is null)
         {
             return numMGP;

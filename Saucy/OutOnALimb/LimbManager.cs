@@ -127,7 +127,7 @@ public unsafe class LimbManager : IDisposable
             //2005423	Out on a Limb	0	Out on a Limb machines	0	1	1	0	0
             //30425	Out on a Limb machine	0	Out on a Limb machines	0	1	1	0	0	Experience the heart-exploding excitement of the Gold Saucer in your own home with this authentic Out on a Limb machine.	Out on a Limb Machine	ui/icon/052000/052680.tex	1	1	14	Out on a Limb Machine	Furnishing		EquipSlotCategory#0	125	18740	1	False	True	False	False	2	0	False	False	False	ItemAction#0	2	0	adventurer	ItemRepairResource#0		0	False	False	0	1	0	0		None		0	0, 0, 0, 0	0, 0, 0, 0	adventurer	0	0	0	0	0	0	0	0	0		0		0		0		0		0		0		0		0		0		0		0		0		0	0	0	False	False	0	False
 
-            if (x.Name.GetText().EqualsIgnoreCaseAny(Svc.Data.GetExcelSheet<EObjName>().GetRow(2005423).Singular.GetText(), Svc.Data.GetExcelSheet<Item>().GetRow(30425).Singular.GetText()) && x.ObjectKind.EqualsAny(ObjectKind.EventObj, ObjectKind.Housing) && Vector3.Distance(Player.Object.Position, x.Position) < 4)
+            if (x.Name.GetText().EqualsIgnoreCaseAny(Svc.Data.GetExcelSheet<EObjName>().GetRow(2005423).Singular.GetText(), Svc.Data.GetExcelSheet<Item>().GetRow(30425).Singular.GetText()) && x.ObjectKind == ObjectKind.EventObj && Vector3.Distance(Player.Object.Position, x.Position) < 4)
             {
                 found = true;
                 if (EzThrottler.Throttle("TargetAndInteract"))
