@@ -10,7 +10,7 @@ using System;
 using System.Collections.Generic;
 using static ECommons.GenericHelpers;
 using static TriadBuddyPlugin.UIReaderTriadGame;
-using ValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
+using AtkValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
 
 namespace Saucy.TripleTriad;
 
@@ -18,7 +18,6 @@ internal static unsafe class TriadAutomater
 {
     public delegate int PlaceCardDelegate(nint addon);
 
-    public static Hook<PlaceCardDelegate> PlaceCardHook;
     public static bool ModuleEnabled = false;
     public static Dictionary<uint, int> TempCardsWonList = [];
 
@@ -28,7 +27,6 @@ internal static unsafe class TriadAutomater
     public static bool LogOutAfterCompletion = false;
     public static bool PlayUntilAllCardsDropOnce = false;
 
-    public static int PlaceCardDetour(nint a1) => PlaceCardHook.Original(a1);
     public static void PlaceCard(int which, int slot)
     {
         try
@@ -89,7 +87,8 @@ internal static unsafe class TriadAutomater
                     //Deck Index
                     values[0] = new()
                     {
-                        Type = ValueType.Int, Int = deck
+                        Type = AtkValueType.Int,
+                        Int = deck
                     };
                     addon->FireCallback(1, values);
                     addon->Close(true);
@@ -152,7 +151,7 @@ internal static unsafe class TriadAutomater
                 if (IsAddonReady(addon))
                 {
                     var textNode = addon->UldManager.NodeList[15]->GetAsAtkTextNode();
-                    var text = MemoryHelper.ReadSeString(&textNode->NodeText).GetText();
+                    var text = textNode->NodeText.GetText();
                     if (text.EqualsAny(s))
                     {
                         Svc.Log.Verbose($"SelectYesno {s} addon {i}");

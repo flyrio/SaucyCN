@@ -23,6 +23,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using TriadBuddyPlugin;
 using static ECommons.GenericHelpers;
+using AtkValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
 
 namespace Saucy;
 
@@ -236,14 +237,20 @@ public sealed class Saucy : IDalamudPlugin
     private int GetBonusMGP(int numMGP)
     {
         double multiplier = 1;
-        //Jackpot
-        if (Svc.Objects.LocalPlayer.StatusList.Any(x => x.StatusId == 902))
+        var localPlayer = Svc.ClientState.LocalPlayer;
+        if (localPlayer is null)
         {
-            multiplier += (double)Svc.Objects.LocalPlayer.StatusList.First(x => x.StatusId == 902).Param / 100;
+            return numMGP;
+        }
+
+        //Jackpot
+        if (localPlayer.StatusList.Any(x => x.StatusId == 902))
+        {
+            multiplier += (double)localPlayer.StatusList.First(x => x.StatusId == 902).Param / 100;
         }
 
         //MGP Card
-        if (Svc.Objects.LocalPlayer.StatusList.Any(x => x.StatusId == 1079))
+        if (localPlayer.StatusList.Any(x => x.StatusId == 1079))
         {
             multiplier += 0.15;
         }
@@ -267,12 +274,12 @@ public sealed class Saucy : IDalamudPlugin
                 var values = stackalloc AtkValue[2];
                 values[0] = new()
                 {
-                    Type = FFXIVClientStructs.FFXIV.Component.GUI.ValueType.Int,
+                    Type = AtkValueType.Int,
                     Int = 0,
                 };
                 values[1] = new()
                 {
-                    Type = FFXIVClientStructs.FFXIV.Component.GUI.ValueType.UInt,
+                    Type = AtkValueType.UInt,
                     UInt = 1,
                 };
                 addon->FireCallback(2, values);

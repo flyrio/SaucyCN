@@ -1,4 +1,5 @@
-﻿using Dalamud.Game;
+﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.Text;
@@ -15,17 +16,18 @@ using ECommons.UIHelpers.AddonMasterImplementations;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using Dalamud.Bindings.ImGui;
 using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using static ECommons.GenericHelpers;
 using static Saucy.UiText;
 
 namespace Saucy.OutOnALimb;
+
 public unsafe class LimbManager : IDisposable
 {
     private uint OldState = 0;
@@ -40,6 +42,8 @@ public unsafe class LimbManager : IDisposable
     public int GamesToPlay = 0;
     public LimbConfig Cfg;
     private bool Exit = false;
+    private EventInfo? chatMessageEvent;
+    private Delegate? chatMessageHandler;
 
     private static bool TidyChat => DalamudReflector.TryGetDalamudPlugin("TidyChat", out var _, false, true);
 
@@ -47,14 +51,59 @@ public unsafe class LimbManager : IDisposable
     {
         Cfg = conf;
         new EzFrameworkUpdate(Tick);
-        Svc.Chat.ChatMessageHandled += Chat_ChatMessage;
-        Svc.Chat.ChatMessageUnhandled += Chat_ChatMessage;
+        SubscribeChatMessage();
     }
 
     public void Dispose()
     {
-        Svc.Chat.ChatMessageHandled -= Chat_ChatMessage;
-        Svc.Chat.ChatMessageUnhandled -= Chat_ChatMessage;
+        UnsubscribeChatMessage();
+    }
+
+    private void SubscribeChatMessage()
+    {
+        try
+        {
+            chatMessageEvent = Svc.Chat.GetType().GetEvent("ChatMessage");
+            if (chatMessageEvent is null)
+            {
+                PluginLog.Error("Failed to find chat message event, turning reader off");
+                return;
+            }
+
+            var method = GetType().GetMethod(nameof(Chat_ChatMessage), BindingFlags.Instance | BindingFlags.NonPublic);
+            if (method is null)
+            {
+                PluginLog.Error("Failed to bind chat message handler, turning reader off");
+                return;
+            }
+
+            chatMessageHandler = Delegate.CreateDelegate(chatMessageEvent.EventHandlerType!, this, method);
+            chatMessageEvent.AddEventHandler(Svc.Chat, chatMessageHandler);
+        }
+        catch (Exception ex)
+        {
+            PluginLog.Error($"Failed to subscribe chat message event, turning reader off: {ex}");
+        }
+    }
+
+    private void UnsubscribeChatMessage()
+    {
+        try
+        {
+            if (chatMessageEvent != null && chatMessageHandler != null)
+            {
+                chatMessageEvent.RemoveEventHandler(Svc.Chat, chatMessageHandler);
+            }
+        }
+        catch (Exception ex)
+        {
+            PluginLog.Error($"Failed to unsubscribe chat message event: {ex}");
+        }
+        finally
+        {
+            chatMessageHandler = null;
+            chatMessageEvent = null;
+        }
     }
 
     private void InteractWithClosestLimb()
@@ -83,16 +132,9 @@ public unsafe class LimbManager : IDisposable
                 found = true;
                 if (EzThrottler.Throttle("TargetAndInteract"))
                 {
-                    if (Svc.Targets.Target?.Address == x.Address)
-                    {
-                        TargetSystem.Instance()->InteractWithObject((FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)x.Address, false);
-                        EzThrottler.Throttle("TargetAndInteract", 10000, true);
-                        GamesToPlay--;
-                    }
-                    else
-                    {
-                        Svc.Targets.Target = x;
-                    }
+                    TargetSystem.Instance()->InteractWithObject((FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject*)x.Address, false);
+                    EzThrottler.Throttle("TargetAndInteract", 10000, true);
+                    GamesToPlay--;
                 }
             }
         }
@@ -110,15 +152,21 @@ public unsafe class LimbManager : IDisposable
         [Svc.Data.GetExcelSheet<Addon>().GetRow(9713).Text.GetText().RemoveSpaces()] = HitPower.Maximum,
     };
 
-    private void Chat_ChatMessage(XivChatType type, int senderId, SeString sender, SeString message)
+    private void Chat_ChatMessage(object message)
     {
         if (!Cfg.EnableLimb) return;
         if (!Svc.Condition[ConditionFlag.OccupiedInQuestEvent]) return;
-        PluginLog.Information($"{type}/{message.GetText().RemoveSpaces()}");
-        if ((int)type == 2105)
+        if (message is null) return;
+
+        var messageType = message.GetType();
+        var logKind = messageType.GetProperty("LogKind")?.GetValue(message)?.ToString();
+        var seString = messageType.GetProperty("Message")?.GetValue(message) as SeString;
+        var text = seString?.TextValue.RemoveSpaces() ?? string.Empty;
+
+        PluginLog.Information($"{logKind}/{text}");
+        if (logKind == nameof(XivChatType.SystemMessage))
         {
-            var s = message.GetText().RemoveSpaces();
-            if (HitPowerText.TryGetValue(s, out var hitPower))
+            if (HitPowerText.TryGetValue(text, out var hitPower))
             {
                 Record(hitPower);
             }
@@ -206,7 +254,7 @@ public unsafe class LimbManager : IDisposable
                 {
                     if (TryGetAddonByName<AddonSelectString>("SelectString", out var ss) && IsAddonReady(&ss->AtkUnitBase))
                     {
-                        var text = MemoryHelper.ReadSeString(&ss->AtkUnitBase.GetTextNodeById(2)->NodeText).GetText().RemoveSpaces();
+                        var text = ss->AtkUnitBase.GetTextNodeById(2)->NodeText.GetText().RemoveSpaces();
                         if (text.Contains(Svc.Data.GetExcelSheet<Addon>().GetRow(9994).Text.GetText().RemoveSpaces(), StringComparison.OrdinalIgnoreCase))
                         {
                             if (EzThrottler.Throttle("ConfirmPlay"))
@@ -290,7 +338,7 @@ public unsafe class LimbManager : IDisposable
             var reader = new ReaderMiniGameBotanist(addon);
             if (TryGetAddonByName<AddonSelectYesno>("SelectYesno", out var ss) && IsAddonReady(&ss->AtkUnitBase))
             {
-                var text = MemoryHelper.ReadSeString(&ss->PromptText->NodeText).GetText();
+                var text = ss->PromptText->NodeText.GetText();
                 var matches = new Regex(Svc.ClientState.ClientLanguage switch
                 {
                     ClientLanguage.English => @"Current payout: ([0-9]+)",

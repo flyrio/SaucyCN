@@ -8,6 +8,7 @@ using System.Numerics;
 using static Saucy.UiText;
 
 namespace Saucy.OtherGames;
+
 public class AnyWayTheWindBlows : Module
 {
     // from https://github.com/img02/Fungah-Totally-Safe-Spot/
@@ -34,7 +35,7 @@ public class AnyWayTheWindBlows : Module
         }
 
         public static bool PlayerOnStage => Player.Position.X is > West and < East && Player.Position.Z is < South and > North;
-        public static bool FungahPresent => Svc.Objects.Any(o => o.BaseId == 1010476);
+        public static bool FungahPresent => Svc.Objects.Any(o => o.DataId == 1010476);
     }
 
     public void Draw()
